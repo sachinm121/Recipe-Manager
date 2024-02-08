@@ -1,8 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <fstream>
+#include <sstream>
 #include <algorithm>
-#include <sstream> // Add this line for std::stringstream
 
 using namespace std;
 
@@ -16,12 +17,50 @@ struct Recipe {
 class RecipeManager {
 private:
     vector<Recipe> recipes;
+    const string filename = "recipes.txt"; // File to store recipe data
 
 public:
+    // Function to load recipes from file
+    void loadRecipesFromFile() {
+        ifstream file(filename);
+        if (file.is_open()) {
+            Recipe recipe;
+            while (getline(file, recipe.name)) {
+                string line;
+                getline(file, line);
+                stringstream ss(line);
+                string ingredient;
+                while (getline(ss, ingredient, ',')) {
+                    recipe.ingredients.push_back(ingredient);
+                }
+                getline(file, recipe.instructions);
+                recipes.push_back(recipe);
+            }
+            file.close();
+        }
+    }
+
     // Function to add a new recipe
     void addRecipe(const Recipe& recipe) {
         recipes.push_back(recipe);
+        saveRecipesToFile(); // Save recipes to file
         cout << "Recipe added successfully!\n";
+    }
+
+    // Function to save recipes to file
+    void saveRecipesToFile() {
+        ofstream file(filename, ios::out | ios::trunc);
+        if (file.is_open()) {
+            for (const auto& recipe : recipes) {
+                file << recipe.name << endl;
+                for (const auto& ingredient : recipe.ingredients) {
+                    file << ingredient << ",";
+                }
+                file << endl;
+                file << recipe.instructions << endl;
+            }
+            file.close();
+        }
     }
 
     // Function to display all recipes
@@ -78,6 +117,7 @@ public:
         for (auto& recipe : recipes) {
             if (recipe.name == name) {
                 recipe = newRecipe;
+                saveRecipesToFile(); // Save recipes to file
                 cout << "Recipe updated successfully!\n";
                 return;
             }
@@ -92,6 +132,7 @@ public:
         });
         if (it != recipes.end()) {
             recipes.erase(it, recipes.end());
+            saveRecipesToFile(); // Save recipes to file
             cout << "Recipe deleted successfully!\n";
         } else {
             cout << "Recipe not found!\n";
@@ -101,6 +142,7 @@ public:
 
 int main() {
     RecipeManager recipeManager;
+    recipeManager.loadRecipesFromFile(); // Load recipes from file
     char choice;
 
     do {
